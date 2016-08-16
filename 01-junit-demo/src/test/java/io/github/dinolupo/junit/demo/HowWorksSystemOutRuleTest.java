@@ -15,44 +15,24 @@
  */
 package io.github.dinolupo.junit.demo;
 
-import static org.hamcrest.CoreMatchers.*;
-import org.junit.After;
-import org.junit.AfterClass;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.Rule;
 
 /**
  *
- * @author dino
+ * @author Dino Lupo <https://dinolupo.github.io>
+ * 
+ * This class show how custom Rule works
+ * 
  */
-public class FirstTest {
+public class HowWorksSystemOutRuleTest {
     
-    public FirstTest() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() {
-    }
-
-    @AfterClass
-    public static void tearDownClass() {
-    }
-
-    @Before
-    public void setUp() {
-    }
-
-    @After
-    public void tearDown() {
-    }
-
+    @Rule
+    public SystemOutRule rule = new SystemOutRule();
+    
     @Test
-    public void hello() {
-        String result = "hello";
-        assertNotNull(result);
-        assertThat(result, is("hello"));
-    }
+    public void oneTest() {}
+    
+    @Test
+    public void anotherTest() {}
 }
