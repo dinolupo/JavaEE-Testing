@@ -15,33 +15,23 @@
  */
 package io.github.dinolupo.javaeetest.business.order.boundary;
 
-import io.github.dinolupo.javaeetest.business.order.control.LegacyAuthenticator;
-import io.github.dinolupo.javaeetest.business.order.control.PaymentProcessor;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-
+import javax.ws.rs.Path;
 
 /**
  *
  * @author Dino Lupo <https://dinolupo.github.io>
- * 
- * We will test POJO, so there isn't a JavaEE environment.
- * POJO will initialize fields in the constructor of the class
- * 
  */
 @Stateless
-public class OrderProcessor {
+@Path("orders")
+public class OrderResource {
     
     @Inject
-    PaymentProcessor paymentProcessor;
+    OrderProcessor processor;
     
-    @Inject
-    LegacyAuthenticator legacyAuthenticator;
-
     public void order() {
-        if (!legacyAuthenticator.authenticate()) {
-            throw new SecurityException("not authenticated");
-        }
-        paymentProcessor.pay();
+        processor.order();
     }
+    
 }

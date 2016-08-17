@@ -32,14 +32,17 @@ public class OrderProcessorTest {
     @Before
     public void init(){
         this.cut = new OrderProcessor();
-        // use mockito to mock the PaymentProcessor
+        // when testing Java EE it is even more simple than testing POJOs, 
+        // you have only to initialize and mock everything and you do not have to
+        // override initialization code in POJO constructors 
+        this.cut.legacyAuthenticator = mock(LegacyAuthenticator.class);
         this.cut.paymentProcessor = mock(PaymentProcessor.class);
     }
  
     @Test
     public void successfulOrder(){
+        when(this.cut.legacyAuthenticator.authenticate()).thenReturn(Boolean.TRUE);
         this.cut.order();
-        // use mockito to verify that the pay() method of the payment processor is invoked 1 time
         verify(this.cut.paymentProcessor, times(1)).pay();
     }
     
@@ -47,9 +50,6 @@ public class OrderProcessorTest {
     // how to test for invalid user?
     @Test(expected = SecurityException.class)
     public void invalidUser() {
-        // use mockito to mock the LegacyAuthenticator
-        this.cut.legacyAuthenticator = mock(LegacyAuthenticator.class);
-        // mock the authenticate() method to return false and check the Exception path
         when(this.cut.legacyAuthenticator.authenticate()).thenReturn(Boolean.FALSE);
         this.cut.order();
     }
