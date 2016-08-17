@@ -13,27 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.dinolupo.javaeetest.business.order.boundary;
+package io.github.dinolupo.javaeetest.business.order.entity;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.json.JsonObject;
-import javax.ws.rs.Path;
+import java.io.Serializable;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 
 /**
  *
  * @author Dino Lupo <https://dinolupo.github.io>
  */
-@Stateless
-@Path("orders")
-public class OrderResource {
+@Entity
+public class Order implements Serializable {
+
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    private String trackingNumber;
+
+    public Order(String trackingNumber) {
+        this.trackingNumber = trackingNumber;
+    }
+
+    public Order() {
+    }
     
-    @Inject
-    OrderProcessor processor;
     
-    public void order(JsonObject order) {
-        final String trackingNumber = order.getString("tracking-number");
-        processor.order(trackingNumber);
+    
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
     
 }

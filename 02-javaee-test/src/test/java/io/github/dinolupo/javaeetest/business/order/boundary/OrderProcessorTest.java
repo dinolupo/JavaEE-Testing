@@ -37,13 +37,17 @@ public class OrderProcessorTest {
         // override initialization code in POJO constructors 
         this.cut.legacyAuthenticator = mock(LegacyAuthenticator.class);
         this.cut.paymentProcessor = mock(PaymentProcessor.class);
+        this.cut.history = mock(OrderHistory.class);
     }
  
     @Test
     public void successfulOrder(){
         when(this.cut.legacyAuthenticator.authenticate()).thenReturn(Boolean.TRUE);
-        this.cut.order();
+        this.cut.order("42");
         verify(this.cut.paymentProcessor, times(1)).pay();
+        // we do not need to interact with EntityManager because we have mocked the OrderHistory
+        // and we only need to verify that the save() method is called
+        verify(this.cut.history).save(anyObject());
     }
     
     
@@ -51,7 +55,7 @@ public class OrderProcessorTest {
     @Test(expected = SecurityException.class)
     public void invalidUser() {
         when(this.cut.legacyAuthenticator.authenticate()).thenReturn(Boolean.FALSE);
-        this.cut.order();
+        this.cut.order("42");
     }
     
     

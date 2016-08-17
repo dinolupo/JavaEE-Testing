@@ -15,25 +15,21 @@
  */
 package io.github.dinolupo.javaeetest.business.order.boundary;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.json.JsonObject;
-import javax.ws.rs.Path;
+import io.github.dinolupo.javaeetest.business.order.entity.Order;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
 /**
  *
  * @author Dino Lupo <https://dinolupo.github.io>
  */
-@Stateless
-@Path("orders")
-public class OrderResource {
+public class OrderHistory {
+
+    @PersistenceContext
+    EntityManager em;
     
-    @Inject
-    OrderProcessor processor;
-    
-    public void order(JsonObject order) {
-        final String trackingNumber = order.getString("tracking-number");
-        processor.order(trackingNumber);
+    public void save(Order order) {
+        em.merge(order);
     }
     
 }

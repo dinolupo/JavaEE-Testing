@@ -17,6 +17,7 @@ package io.github.dinolupo.javaeetest.business.order.boundary;
 
 import io.github.dinolupo.javaeetest.business.order.control.LegacyAuthenticator;
 import io.github.dinolupo.javaeetest.business.order.control.PaymentProcessor;
+import io.github.dinolupo.javaeetest.business.order.entity.Order;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 
@@ -38,10 +39,16 @@ public class OrderProcessor {
     @Inject
     LegacyAuthenticator legacyAuthenticator;
 
-    public void order() {
+    @Inject
+    OrderHistory history;
+    
+    public void order(String trackingNumber) {
         if (!legacyAuthenticator.authenticate()) {
             throw new SecurityException("not authenticated");
         }
+        Order order = new Order(trackingNumber);
         paymentProcessor.pay();
+        history.save(order);
+        
     }
 }
