@@ -39,8 +39,10 @@ public class Order implements Serializable {
 
     public Order() {
     }
-    
-    
+
+    public String getTrackingNumber() {
+        return trackingNumber;
+    }
     
     public Long getId() {
         return id;
