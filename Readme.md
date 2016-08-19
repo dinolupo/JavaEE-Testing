@@ -471,8 +471,145 @@ Since it is a bad practice using anyObject() in our previous test, we want to us
 
 ### 16. Code Coverage Is Nice, But
 
+Maven has a nice plugin for code coverage, called *jacoco*, that is also integrated in Netbeans (it appears after adding the plugin to the pom.xml)
+
+> pom.xml plugin section for code coverage:
+
+```xml
+    <build>
+        <!-- CODE COVERAGE PLUGIN -->
+        <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.7.7.201606060606</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>prepare-integration-test-agent</id>
+                        <goals>
+                            <goal>prepare-agent-integration</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>generate-integration-test-report</id>
+                        <goals>
+                            <goal>report-integration</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+        <!-- END OF CODE COVERAGE PLUGIN -->
+    </build>
+```
+
+In JavaEE, Code Coverage is useful to find code that is not used anymore. It's best to rely on System Test with package really depoloyed on an application server.
 
 ### 17. Integration Testing JPA Persistence
+
+We tested a lot but we have no idea if the application is even deployable on application server, so before I deploy the first time the application, what I would like to do is to write a *test* to verify whether the Entity is deployable and mappable to a table.
+
+In order to do this, let's create an Integration Test `OrderIT`.
+
+In the @Before method let's use the Persistence methods to bootstrap the EntityManager outside the container and then retrieve a Transaction:
+
+```java
+public class OrderIT {
+
+    private EntityManager em;
+    private EntityTransaction tx;
+    
+    @Before
+    public void setUp() {
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("integration-test");
+        this.em = emf.createEntityManager();
+        this.tx = this.em.getTransaction();
+    }   
+}
+```
+
+Now we want to add a method that verifies mappings on a SQL Table:
+
+```java
+    @Test
+    public void verifyMappings() {
+        this.tx.begin();
+        this.em.merge(new Order("42"));
+        this.tx.commit();
+    }
+```
+
+At this point we are relying on a Persistence Unit named "it" (Integration Testing) but in the project we have only a "prod" Persistence Unit. We do not want to use a production persistence unit, but we want to use one that is usable for testing purpouses, so we are going to create a new persistence.xml only for testing (in the testing tree):
+
+```sh
+mkdir src/test/resources/META-INF
+```
+
+And create a persistence.xml file with the following content:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.1" xmlns="http://xmlns.jcp.org/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd">
+  <persistence-unit name="integration-test" transaction-type="RESOURCE_LOCAL">
+    <class>io.github.dinolupo.javaeetest.business.order.entity.Order</class>
+    <exclude-unlisted-classes>true</exclude-unlisted-classes>
+    <properties>
+      <property name="javax.persistence.jdbc.url" value="jdbc:derby:./testDB;create=true"/>
+      <property name="javax.persistence.jdbc.driver" value="org.apache.derby.jdbc.EmbeddedDriver"/>
+      <property name="javax.persistence.schema-generation.database.action" value="drop-and-create"/>
+    </properties>
+  </persistence-unit>
+</persistence>
+```
+
+We have inserted the class Order in the persistence unit and we want to use Derby as a test database. Also, since we are not going to test into an application server, we need an implementation for JPA, because in Maven we only have the javaee-api \<provided\> and no implementations.
+
+So we need to import a JPA implementation (eclipselink) and Derby database:
+
+> eclipselink
+
+```xml
+        <dependency>
+            <groupId>org.eclipse.persistence</groupId>
+            <artifactId>eclipselink</artifactId>
+            <version>2.6.3</version>
+            <scope>test</scope>
+        </dependency>
+
+``` 
+
+> derby db
+
+```xml
+        <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derby</artifactId>
+            <version>10.12.1.1</version>
+            <scope>test</scope>
+        </dependency>
+```
+
+Now, if you try to run tests, you will find an error, because "ORDER" is a SQL reserved word and cannot be used as a table name. You will need to add a custom table name as follows:
+
+```java
+...
+@Entity(name = "T_ORDER")
+public class Order implements Serializable {...}
+```
+
+To summarize, for every Entity we need to write an Integration Test to test mappings and queries without the need to use an application server. We can factor out the EntityManager construction so the test will be even more efficient.
 
 
 ### 18. Reusing JPA Initialization Code

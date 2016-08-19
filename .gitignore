@@ -1,6 +1,11 @@
 
 # Created by https://www.gitignore.io/
 
+## derby testDB
+
+derby.log
+testDB/
+
 # Netbeans
 
 nb-configuration.xml

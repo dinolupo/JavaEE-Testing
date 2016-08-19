@@ -15,41 +15,34 @@
  */
 package io.github.dinolupo.javaeetest.business.order.entity;
 
-import java.io.Serializable;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Persistence;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  *
  * @author Dino Lupo <https://dinolupo.github.io>
  */
-@Entity(name = "T_ORDER")
-public class Order implements Serializable {
+public class OrderIT {
 
-    @Id
-    @GeneratedValue
-    private Long id;
-
-    private String trackingNumber;
-
-    public Order(String trackingNumber) {
-        this.trackingNumber = trackingNumber;
-    }
-
-    public Order() {
-    }
-
-    public String getTrackingNumber() {
-        return trackingNumber;
+    private EntityManager em;
+    private EntityTransaction tx;
+    
+    @Before
+    public void setUp() {
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("integration-test");
+        this.em = emf.createEntityManager();
+        this.tx = this.em.getTransaction();
     }
     
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
+    @Test
+    public void verifyMappings() {
+        this.tx.begin();
+        this.em.merge(new Order("42"));
+        this.tx.commit();
     }
     
 }
