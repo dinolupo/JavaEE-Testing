@@ -35,7 +35,7 @@ public class OrderProcessorTest {
     @Before
     public void init(){
         this.cut = new OrderProcessor();
-        // when testing Java EE it is even more simple than testing POJOs, 
+        // Testing Java EE it is even more simple than testing POJOs, 
         // you have only to initialize and mock everything and you do not have to
         // override initialization code in POJO constructors 
         this.cut.legacyAuthenticator = mock(LegacyAuthenticator.class);
@@ -59,16 +59,18 @@ public class OrderProcessorTest {
         final String expectedId = "42";
         this.cut.order(expectedId);
         verify(this.cut.paymentProcessor, times(1)).pay();
-        // we use a custom matcher here, because we are not satisfied with anyObject() 
-        // but we want to test that the Order entity is the argument and that the id is "42"
+        // We use a custom matcher here, because we are not satisfied with anyObject().
+        // We want to test that the Order entity is the argument and that the id is "42"
         verify(this.cut.history).save(argThat(new BaseMatcher<Order>() {
             
             @Override
             public boolean matches(Object item) {
+                // the argument of save() has to be an Order
                 if (!(item instanceof Order)) {
                     return false;
                 }
                 Order order = (Order) item;
+                // check the correctness of the Order values
                 return expectedId.equalsIgnoreCase(order.getTrackingNumber());
             }
 
