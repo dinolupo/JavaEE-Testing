@@ -15,35 +15,43 @@
  */
 package io.github.dinolupo.mon.business.reporting.boundary;
 
-import javax.json.JsonObject;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import org.junit.Before;
-import org.junit.Test;
-import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.*;
-import org.junit.Rule;
-
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
 
 /**
  *
  * @author Dino Lupo <https://dinolupo.github.io>
  */
-public class SnapshotsResourceIT {
+public class JAXRSClient implements TestRule {
 
-    @Rule
-    public JAXRSClient provider = JAXRSClient.target("http://localhost:8080/03-monitoring/resources/snapshots");
+    Client client;
+    WebTarget target;
 
-     @Test
-     public void snapshots() {
-        Response response = this.provider.target.request(MediaType.APPLICATION_JSON).get();
-        assertThat(response.getStatusInfo(), is(Status.OK));
-        JsonObject entity = response.readEntity(JsonObject.class);
-         assertNotNull(entity);
-         System.out.println("entity = " + entity);
-     }
+    
+    private JAXRSClient(String uri) {
+        this.client = ClientBuilder.newClient();
+        this.target = this.client.target(uri);
+    }
+
+    public static JAXRSClient target(String uri) {
+        return new JAXRSClient(uri);
+    }
+    
+    
+    
+    @Override
+    public Statement apply(Statement base, Description description) {
+        return new Statement() {
+            @Override
+            public void evaluate() throws Throwable {
+                base.evaluate();
+            }
+        };
+    }
+
 }

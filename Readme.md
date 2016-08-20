@@ -838,6 +838,57 @@ mvn failsafe:integration-test failsafe:verify
 
 ### 21. JAX-RS Test Rules
 
+Like we did before with the EntityManager, we can factor out the initialization of JAXRS Client with a custom rule:
+
+> Custom TestRule that create the Client and the Target
+
+```java
+package io.github.dinolupo.mon.business.reporting.boundary;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
+import org.junit.Before;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
+
+public class JAXRSClient implements TestRule {
+
+    Client client;
+    WebTarget target;
+    
+    private JAXRSClient(String uri) {
+        this.client = ClientBuilder.newClient();
+        this.target = this.client.target(uri);
+    }
+
+    public static JAXRSClient target(String uri) {
+        return new JAXRSClient(uri);
+    }
+       
+    @Override
+    public Statement apply(Statement base, Description description) {
+        return new Statement() {
+            @Override
+            public void evaluate() throws Throwable {
+                base.evaluate();
+            }
+        };
+    }
+}
+```
+
+and then use the rule instead of the provided field for Target and Client
+
+> in the class SnapshotsResourceIT add the newly created Rule:
+
+```java
+	...
+    @Rule
+    public JAXRSClient provider = JAXRSClient.target("http://localhost:8080/03-monitoring/resources/snapshots");
+    ...
+```
 
 ### 22. The Look and Feel of Embedded JAX-RS
 
