@@ -19,24 +19,38 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
 
 /**
  *
  * @author Dino Lupo <https://dinolupo.github.io>
  */
-public class OrderIT {
+public class EntityManagerProvider implements TestRule {
+
+    EntityManager em;
+    EntityTransaction tx;
+
+    private EntityManagerProvider(String unitName) {
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory(unitName);
+        this.em = emf.createEntityManager();
+        this.tx = this.em.getTransaction();
+    }
+
+    public static EntityManagerProvider withUnit(String name) {
+        return new EntityManagerProvider(name);
+    }
     
-    @Rule
-    public EntityManagerProvider provider = EntityManagerProvider.withUnit("integration-test"); 
-    
-    @Test
-    public void verifyMappings() {
-        provider.tx.begin();
-        provider.em.merge(new Order("42"));
-        provider.tx.commit();
+    @Override
+    public Statement apply(Statement base, Description description) {
+        return new Statement(){
+            @Override
+            public void evaluate() throws Throwable {
+                base.evaluate();
+                em.clear();
+            }
+        };
     }
     
 }

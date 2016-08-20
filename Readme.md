@@ -614,6 +614,73 @@ To summarize, for every Entity we need to write an Integration Test to test mapp
 
 ### 18. Reusing JPA Initialization Code
 
+How to factor out the initialization code from the unit test of entities? We do it in a "JUnit" way, using a TestRule.
+
+Let's create an `EntityManagerProvider` that implements a TestRule:
+
+```java
+package io.github.dinolupo.javaeetest.business.order.entity;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Persistence;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
+
+public class EntityManagerProvider implements TestRule {
+
+    EntityManager em;
+    EntityTransaction tx;
+
+    private EntityManagerProvider(String unitName) {
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory(unitName);
+        this.em = emf.createEntityManager();
+        this.tx = this.em.getTransaction();
+    }
+
+    public static EntityManagerProvider withUnit(String name) {
+        return new EntityManagerProvider(name);
+    }
+    
+    @Override
+    public Statement apply(Statement base, Description description) {
+        return new Statement(){
+            @Override
+            public void evaluate() throws Throwable {
+                base.evaluate();
+                em.clear();
+            }
+        };
+    }
+}
+```
+
+This Provider TestRule, creates on the fly the EntityManager and the Transaction needed to test the Entity, then decorates the statement clearing the EntityManager. Now the Entity become more simple like the following:
+
+> new version of the Entity using a Test Rule
+
+```java
+package io.github.dinolupo.javaeetest.business.order.entity;
+
+import org.junit.Rule;
+import org.junit.Test;
+
+public class OrderIT {
+    
+    @Rule
+    public EntityManagerProvider provider = EntityManagerProvider.withUnit("integration-test"); 
+    
+    @Test
+    public void verifyMappings() {
+        provider.tx.begin();
+        provider.em.merge(new Order("42"));
+        provider.tx.commit();
+    }
+    
+}
+```
 
 ### 19. Moving to Rulz
 
