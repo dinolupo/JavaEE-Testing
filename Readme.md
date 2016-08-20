@@ -684,9 +684,157 @@ public class OrderIT {
 
 ### 19. Moving to Rulz
 
+A Testing Library created by Adam Bien uses the TestRule created before and also a JAX-RS Provider Rule along with a custom Matcher to test for http return code. 
+
+[https://github.com/AdamBien/rulz]()
+
+
+## Project folder `03-monitoring` and `03-monitoring-st`
+
 
 ### 20. System Tests For JAX-RS
 
+To see how to test JAX RS services, let's create a monitoring sample project with a rest service:
+
+> use the com.airhacks 1.3 javaee maven template and create the following JAX-RS resource class
+
+```java
+package io.github.dinolupo.mon.business.reporting.boundary;
+
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+
+@Path("snapshots")
+public class SnapshotsResource {
+    
+    @GET
+    public JsonObject snapshots() {
+        return Json.createObjectBuilder()
+                .add("s1", "fast")
+                .build();
+        
+    }
+}
+```
+
+Run in Java EE 7 container like Payara or Wildfly and verify it at [http://localhost:8080/03-monitoring/resources/snapshots]()
+
+Now we create a separate project for System Test, using the same name of our project but with "**-st**" extension. The new project is a simple Maven Java application with the following pom.xml:
+
+> new Java Maven application pom.xml with JUnit and JAX-RS libraries to test the services
+
+```java
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.github.dinolupo</groupId>
+    <artifactId>03-monitoring-st</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>2.23.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.json</artifactId>
+            <version>1.0.4</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-processing</artifactId>
+            <version>2.23.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+</project>
+```
+
+Our Integration Test class is the following:
+
+```java
+/*
+ * Copyright 2016 Dino Lupo <https://dinolupo.github.io>.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.github.dinolupo.mon.business.reporting.boundary;
+
+import javax.json.JsonObject;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.*;
+
+
+public class SnapshotsResourceIT {
+
+    private Client client;
+    // target under test
+    private WebTarget tut;
+    
+    public SnapshotsResourceIT() {
+    }
+    
+    @Before
+    public void setUp() {
+        this.client = ClientBuilder.newClient();
+        this.tut = this.client.target("http://localhost:8080/03-monitoring/resources/snapshots");
+    }
+
+     @Test
+     public void snapshots() {
+        Response response = this.tut.request(MediaType.APPLICATION_JSON).get();
+        assertThat(response.getStatusInfo(), is(Status.OK));
+        JsonObject entity = response.readEntity(JsonObject.class);
+         assertNotNull(entity);
+         System.out.println("entity = " + entity);
+     }
+}
+```
+
+In this class we are going to test the endpoint to see if the response code is OK and we are able to verify the content of the JsonObject returned.
+
+This project can be executed by Jenkins pipeline. Because it ends with *IT* and it is not a unit test, when you build with `mvn clean install`, tests are not executed.
+
+To execute Integration Test and Verify the results from the command line:
+
+```sh
+mvn failsafe:integration-test failsafe:verify
+```
 
 ### 21. JAX-RS Test Rules
 

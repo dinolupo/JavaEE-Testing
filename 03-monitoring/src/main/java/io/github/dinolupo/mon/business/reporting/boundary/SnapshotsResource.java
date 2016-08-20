@@ -13,25 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.dinolupo.javaeetest.business.order.entity;
+package io.github.dinolupo.mon.business.reporting.boundary;
 
-import org.junit.Rule;
-import org.junit.Test;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
 
 /**
  *
  * @author Dino Lupo <https://dinolupo.github.io>
  */
-public class OrderIT {
+@Path("snapshots")
+public class SnapshotsResource {
     
-    @Rule
-    public EntityManagerProvider provider = EntityManagerProvider.withUnit("integration-test"); 
-    
-    @Test
-    public void verifyMappings() {
-        provider.tx.begin();
-        provider.em.merge(new Order("42"));
-        provider.tx.commit();
+    @GET
+    public JsonObject snapshots() {
+        return Json.createObjectBuilder()
+                .add("s1", "fast")
+                .build();
+        
     }
-    
 }
