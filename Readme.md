@@ -1071,6 +1071,22 @@ System Tests on a separate project are good and can be used later also for stres
 
 ### 24. Refining The Asserts
 
+Of Course the test should be refined adding other cases to test operations like DELETE, PUT (modify) and to test cases like finding not existent object:
+
+> test for not existing object:
+
+```java
+@Test
+public void findNotExisting() {
+    String key = UUID.randomUUID().toString();
+    Response response = this.provider.target
+            .path(key)
+            .request(MediaType.APPLICATION_JSON)
+            .get();
+    assertThat(response.getStatusInfo(), is(Status.NO_CONTENT)); // 204
+}
+```
+
 
 ### 25. Embedded Tests Wth Arquillian
 
