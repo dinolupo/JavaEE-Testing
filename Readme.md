@@ -892,6 +892,92 @@ and then use the rule instead of the provided field for Target and Client
 
 ### 22. The Look and Feel of Embedded JAX-RS
 
+There is another way to test the REST APIs that it is more pragmatic but not portable (outside the Java EE standard). This is the Jersey framework. With the Jersey framework you can test the project itself (in our case the `03-monitoring` project) without the need to create an external project like we did with the System Test `03-monitoring-st`. So in the sample project `03-monitoring`, add the following dependencies in the pom.xml:
+
+> Jersey Test Dependencies (you can use in memory provider to run the container in memory, or the jdk implementation) 
+
+```xml
+        <dependency>
+            <groupId>org.glassfish.jersey.test-framework.providers</groupId>
+            <artifactId>jersey-test-framework-provider-grizzly2</artifactId>
+            <version>2.23.1</version>
+            <scope>test</scope>
+        </dependency>
+        <!--
+        <dependency>
+            <groupId>org.glassfish.jersey.test-framework.providers</groupId>
+            <artifactId>jersey-test-framework-provider-inmemory</artifactId>
+            <version>2.23.1</version>
+            <scope>test</scope>
+        </dependency>
+        -->
+        <dependency>
+            <groupId>org.glassfish.jersey.test-framework.providers</groupId>
+            <artifactId>jersey-test-framework-provider-jdk-http</artifactId>
+            <version>2.23.1</version>
+            <scope>test</scope>
+        </dependency>
+```  
+
+> JAX-RS Dependencies needed for Json and REST web services
+
+```xml
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>2.23.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.json</artifactId>
+            <version>1.0.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-processing</artifactId>
+            <version>2.23.1</version>
+        </dependency>
+
+```
+
+Now let's create an Integration Test for the class `SnapshotsResource` like the following one:
+
+> Integration Test for the class `SnapshotsResource` using the JerseyTest framework:
+
+```java
+package io.github.dinolupo.mon.business.reporting.boundary;
+
+import javax.json.JsonObject;
+import javax.ws.rs.core.Application;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.test.JerseyTest;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.*;
+
+public class SnapshotsResourceIT extends JerseyTest {
+
+    // we need to Override this method to configure the system
+    @Override
+    protected Application configure() {
+        // because we are not in a container, we need to configure the system
+        return new ResourceConfig(SnapshotsResource.class);
+    }
+    
+    @Test
+    public void snapshots() {
+        Response response = target("snapshots").request().get();
+        assertThat(response.getStatusInfo(), is(Status.OK));
+        JsonObject result = response.readEntity(JsonObject.class);
+        assertNotNull(result);
+        System.out.println("result = " + result);
+    }
+}
+```
+
+Now we can execute the test. To recap, at the beginning of a project, if you want to test your APIs without creating an external project and deploying the application in a container you can test easily with the Jersey framework. Later on you can use those tests for regression test or you can move all in an external project.
 
 ### 23. System Tests Driven JAX-RS
 
