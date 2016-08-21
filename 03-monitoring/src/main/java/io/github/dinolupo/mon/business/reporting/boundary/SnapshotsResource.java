@@ -15,23 +15,61 @@
  */
 package io.github.dinolupo.mon.business.reporting.boundary;
 
+import java.net.URI;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.PostConstruct;
+import javax.ejb.Singleton;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 /**
  *
  * @author Dino Lupo <https://dinolupo.github.io>
  */
+@Singleton //used for testing purposes
 @Path("snapshots")
 public class SnapshotsResource {
+
+    // simulate a no sql db to store saved json object
+    private ConcurrentHashMap<String, JsonObject> noSQLDB;
+    
+    @PostConstruct
+    public void init() {
+        this.noSQLDB = new ConcurrentHashMap<>();
+    }
     
     @GET
     public JsonObject snapshots() {
         return Json.createObjectBuilder()
                 .add("s1", "fast")
-                .build();
-        
+                .build();        
     }
+    
+    @GET
+    @Path("{id}")
+    public JsonObject findSnapshot(@PathParam("id") String uuid) {
+        return noSQLDB.get(uuid);
+    }
+    
+    @POST
+    public Response save(JsonObject payload, @Context UriInfo uriInfo) {
+        String uuid = UUID.randomUUID().toString();
+        
+        // placeholder for storing object to DB
+        noSQLDB.put(uuid, payload);
+        
+        URI uri = uriInfo.getAbsolutePathBuilder()
+                .path("/" + uuid)
+                .build();
+        return Response.created(uri).build();
+    }
+    
 }

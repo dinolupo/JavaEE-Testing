@@ -981,6 +981,93 @@ Now we can execute the test. To recap, at the beginning of a project, if you wan
 
 ### 23. System Tests Driven JAX-RS
 
+Going back to our `03-monitoring-st` System Test project, we are going to show how to create an almost real CRUD test.
+
+> add a crud test (we only implement POST and GET for now)
+
+```java
+     @Test
+     public void crud() {
+        final String key = "javaee";
+        final String value = "testing";
+        JsonObject payload = Json.createObjectBuilder()
+                .add(key, value)
+                .build();
+        
+        Response response = this.provider.target.request()
+                .post(Entity.json(payload));
+        
+        assertThat(response.getStatusInfo(), is(Status.CREATED));
+         
+        // verify that a location has been returned
+        String uri = response.getHeaderString("Location");
+        assertNotNull(uri);
+         
+        // find the object with get and test its correctness
+        JsonObject result = this.provider.client.target(uri)
+                .request(MediaType.APPLICATION_JSON)
+                .get(JsonObject.class);
+        assertNotNull(result);
+        assertThat(result.getString(key), is(value));
+     }
+```
+
+If you run the test (after running the monitoring application) you will receive 404 Method Not Allowed, because there is no POST method implemented. So go back to the `03-monitoring` project and create the method POST and GET that simulates a save/get from a SQL DB (use a @Singleton otherwise each request will have different collections):
+
+```java
+package io.github.dinolupo.mon.business.reporting.boundary;
+
+import java.net.URI;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.PostConstruct;
+import javax.ejb.Singleton;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+
+@Singleton //used for testing purposes
+@Path("snapshots")
+public class SnapshotsResource {
+
+    // simulate a no sql db to store saved json object
+    private ConcurrentHashMap<String, JsonObject> noSQLDB;
+    
+    @PostConstruct
+    public void init() {
+        this.noSQLDB = new ConcurrentHashMap<>();
+    }
+    
+    @GET
+    @Path("{id}")
+    public JsonObject findSnapshot(@PathParam("id") String uuid) {
+        return noSQLDB.get(uuid);
+    }
+    
+    @POST
+    public Response save(JsonObject payload, @Context UriInfo uriInfo) {
+        String uuid = UUID.randomUUID().toString();
+        
+        // placeholder for storing object to DB
+        noSQLDB.put(uuid, payload);
+        
+        URI uri = uriInfo.getAbsolutePathBuilder()
+                .path("/" + uuid)
+                .build();
+        return Response.created(uri).build();
+    }
+    
+}
+```
+
+System Tests on a separate project are good and can be used later also for stress test.
+
 
 ### 24. Refining The Asserts
 

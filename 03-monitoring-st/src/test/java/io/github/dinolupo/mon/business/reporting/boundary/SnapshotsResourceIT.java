@@ -15,14 +15,12 @@
  */
 package io.github.dinolupo.mon.business.reporting.boundary;
 
+import javax.json.Json;
 import javax.json.JsonObject;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
@@ -45,5 +43,31 @@ public class SnapshotsResourceIT {
         JsonObject entity = response.readEntity(JsonObject.class);
          assertNotNull(entity);
          System.out.println("entity = " + entity);
+     }
+     
+     @Test
+     public void crud() {
+        final String key = "javaee";
+        final String value = "testing";
+        JsonObject payload = Json.createObjectBuilder()
+                .add(key, value)
+                .build();
+        
+        Response response = this.provider.target.request()
+                .post(Entity.json(payload));
+        
+        assertThat(response.getStatusInfo(), is(Status.CREATED));
+         
+        // verify that a location has been returned
+        String uri = response.getHeaderString("Location");
+        assertNotNull(uri);
+         System.out.println("uri = " + uri);
+         
+        // find the object with get and test its correctness
+        JsonObject result = this.provider.client.target(uri)
+                .request(MediaType.APPLICATION_JSON)
+                .get(JsonObject.class);
+        assertNotNull(result);
+        assertThat(result.getString(key), is(value));
      }
 }
